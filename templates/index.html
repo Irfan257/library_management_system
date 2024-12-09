@@ -1,0 +1,323 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 800px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        h2, h3 {
+            color: #333;
+        }
+
+        .form-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-container label {
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .form-container input {
+            padding: 8px;
+            margin: 5px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .form-container button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .action-buttons button {
+            padding: 5px 10px;
+            margin: 5px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .action-buttons button.update {
+            background-color: #4CAF50;
+        }
+
+        .action-buttons button:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Library Management System</h1>
+
+        <!-- Books Section -->
+        <h2>Books List</h2>
+        <div class="form-container">
+            <h3>Add a New Book</h3>
+            <form id="add-book-form">
+                <label for="title">Title: </label>
+                <input type="text" id="title" required><br>
+                <label for="author">Author: </label>
+                <input type="text" id="author" required><br>
+                <button type="submit">Add Book</button>
+            </form>
+        </div>
+
+        <table id="book-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="book-list"></tbody>
+        </table>
+
+        <!-- Members Section -->
+        <h2>Members List</h2>
+        <div class="form-container">
+            <h3>Add a New Member</h3>
+            <form id="add-member-form">
+                <label for="name">Name: </label>
+                <input type="text" id="name" required><br>
+                <label for="email">Email: </label>
+                <input type="email" id="email" required><br>
+                <button type="submit">Add Member</button>
+            </form>
+        </div>
+
+        <table id="member-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="member-list"></tbody>
+        </table>
+    </div>
+
+    <script>
+
+        // Fetch Books
+fetch('/books')
+    .then(response => response.json())
+    .then(data => {
+        const bookList = document.getElementById('book-list');
+        data.forEach(book => {
+            const row = document.createElement('tr');
+            row.dataset.id = book.id; // Add data-id attribute to store the book id
+            row.innerHTML = `
+                <td>${book.title}</td>
+                <td>${book.author}</td>
+                <td class="action-buttons">
+                    <button class="update" onclick="updateBook(${book.id})">Update</button>
+                    <button onclick="deleteBook(${book.id})">Delete</button>
+                </td>
+            `;
+            bookList.appendChild(row);
+        });
+    });
+
+// Fetch Members
+fetch('/members')
+    .then(response => response.json())
+    .then(data => {
+        const memberList = document.getElementById('member-list');
+        data.forEach(member => {
+            const row = document.createElement('tr');
+            row.dataset.id = member.id; // Add data-id attribute to store the member id
+            row.innerHTML = `
+                <td>${member.name}</td>
+                <td>${member.email}</td>
+                <td class="action-buttons">
+                    <button class="update" onclick="updateMember(${member.id})">Update</button>
+                    <button onclick="deleteMember(${member.id})">Delete</button>
+                </td>
+            `;
+            memberList.appendChild(row);
+        });
+    });
+
+// Add Book
+document.getElementById('add-book-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const title = document.getElementById('title').value;
+    const author = document.getElementById('author').value;
+
+    fetch('/books', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const row = document.createElement('tr');
+        row.dataset.id = data.book.id; // Add the ID to data-id
+        row.innerHTML = `
+            <td>${data.book.title}</td>
+            <td>${data.book.author}</td>
+            <td class="action-buttons">
+                <button class="update" onclick="updateBook(${data.book.id})">Update</button>
+                <button onclick="deleteBook(${data.book.id})">Delete</button>
+            </td>
+        `;
+        document.getElementById('book-list').appendChild(row);
+        document.getElementById('add-book-form').reset();
+    });
+});
+
+// Add Member
+document.getElementById('add-member-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+
+    fetch('/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const row = document.createElement('tr');
+        row.dataset.id = data.member.id; // Add the ID to data-id
+        row.innerHTML = `
+            <td>${data.member.name}</td>
+            <td>${data.member.email}</td>
+            <td class="action-buttons">
+                <button class="update" onclick="updateMember(${data.member.id})">Update</button>
+                <button onclick="deleteMember(${data.member.id})">Delete</button>
+            </td>
+        `;
+        document.getElementById('member-list').appendChild(row);
+        document.getElementById('add-member-form').reset();
+    });
+});
+
+// Delete Book
+function deleteBook(id) {
+    fetch(`/books/${id}`, { method: 'DELETE' })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            const row = document.querySelector(`#book-list tr[data-id='${id}']`);
+            row.remove();
+        });
+}
+
+// Delete Member
+function deleteMember(id) {
+    fetch(`/members/${id}`, { method: 'DELETE' })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            const row = document.querySelector(`#member-list tr[data-id='${id}']`);
+            row.remove();
+        });
+}
+
+// Update Book
+function updateBook(id) {
+    const title = prompt("Enter new title:");
+    const author = prompt("Enter new author:");
+
+    fetch(`/books/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        const row = document.querySelector(`#book-list tr[data-id='${id}']`);
+        row.querySelector('td:nth-child(1)').textContent = data.book.title;
+        row.querySelector('td:nth-child(2)').textContent = data.book.author;
+    });
+}
+
+// Update Member
+function updateMember(id) {
+    const name = prompt("Enter new name:");
+    const email = prompt("Enter new email:");
+
+    fetch(`/members/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        const row = document.querySelector(`#member-list tr[data-id='${id}']`);
+        row.querySelector('td:nth-child(1)').textContent = data.member.name;
+        row.querySelector('td:nth-child(2)').textContent = data.member.email;
+    });
+}
+
+    </script>
+
+</body>
+</html>
